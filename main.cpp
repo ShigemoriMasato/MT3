@@ -220,9 +220,9 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	Vector3 translate{};
 	Vector3 cameraPosition{ 0.0f, 0.0f, -50.0f };
 	Vector3 kLocalVertices[3] = {
+		{ 0.0f, 1.0f, 0.0f },
 		{ -1.0f, -1.0f, 0.0f },
-		{ 1.0f, -1.0f, 0.0f },
-		{ 0.0f, 1.0f, 0.0f }
+		{ 1.0f, -1.0f, 0.0f }
 	};
 	const float kSpeed = 0.1f;
 
