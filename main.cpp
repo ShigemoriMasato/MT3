@@ -12,10 +12,18 @@ struct Vector3 {
 	float x;
 	float y;
 	float z;
+
+	float operator*(const Vector3& v) const {
+		return x * v.x + y * v.y + z * v.z;
+	}
 };
 
 float cot(float radian) {
 	return 1.0f / tanf(radian);
+}
+
+Vector3 cross(const Vector3& a, const Vector3& b) {
+	return { b.y * a.z - b.z * a.y, b.z * a.x - b.x * a.z, b.x * a.y - b.y * a.x };;
 }
 
 Matrix4x4 MakeTranslateMatrix(const Vector3& translate) {
@@ -259,7 +267,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 			translate.x += kSpeed;
 		}
 
-		rotate.y += 0.1f;
+		rotate.y += 0.03f;
 
 		Matrix4x4 worldMatrix = MakeAffineMatrix({ 1.0f, 1.0f,1.0f }, rotate, translate);
 		Matrix4x4 cameraMatrix = MakeAffineMatrix({ 1.0f, 1.0f,1.0f }, { 0.0f, 0.0f, 0.0f }, cameraPosition);
@@ -281,8 +289,10 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		/// ↓描画処理ここから
 		///
 
-		Novice::DrawTriangle(int(screenVertices[0].x), int(screenVertices[0].y), int(screenVertices[1].x), int(screenVertices[1].y),
-			int(screenVertices[2].x), int(screenVertices[2].y), RED, kFillModeSolid);
+		if (screenVertices[0] * cross(screenVertices[1], screenVertices[2]) <= 0) {
+			Novice::DrawTriangle(int(screenVertices[0].x), int(screenVertices[0].y), int(screenVertices[1].x), int(screenVertices[1].y),
+				int(screenVertices[2].x), int(screenVertices[2].y), RED, kFillModeSolid);
+		}
 
 		///
 		/// ↑描画処理ここまで
