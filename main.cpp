@@ -18,12 +18,43 @@ struct Vector3 {
 	float operator*(const Vector3& v) const {
 		return x * v.x + y * v.y + z * v.z;
 	}
+
+	Vector3 operator*(const float scalar) const {
+		return { x * scalar, y * scalar, z * scalar };
+	}
+
+	Vector3 operator+(const Vector3& v) const {
+		return { x + v.x, y + v.y, z + v.z };
+	}
+
+	Vector3 operator-(const Vector3& v) const {
+		return { x - v.x, y - v.y, z - v.z };
+	}
+
+	float Length()const {
+		return std::sqrtf(x * x + y * y + z * z);
+	}
 };
 
 struct Sphere {
 	Vector3 center;
 	float radius;
 	uint32_t subdivision;
+};
+
+struct Line {
+	Vector3 origin;
+	Vector3 diff;
+};
+
+struct Ray {
+	Vector3 origin;
+	Vector3 diff;
+};
+
+struct Segment {
+	Vector3 origin;
+	Vector3 diff;
 };
 
 float cot(float radian) {
@@ -287,6 +318,11 @@ void DrawSphere(const Sphere& sphere, const Matrix4x4& viewProjectionMatrix, con
 
 			Novice::DrawLine(int(a.x), int(a.y), int(b.x), int(b.y), color);
 			Novice::DrawLine(int(b.x), int(b.y), int(c.x), int(c.y), color);
+
+			//if (a * cross(b, c) <= 0) {
+			//	Novice::DrawTriangle(int(a.x), int(a.y), int(b.x), int(b.y),
+			//		int(c.x), int(c.y), color, kFillModeSolid);
+			//}
 		}
 	}
 }
@@ -315,6 +351,19 @@ namespace ImGui {
 	}
 }
 
+Vector3 Project(const Vector3& v1, const Vector3& v2) {
+	Vector3 ans = v2 * ((v1 * v2) / (v2.Length() * v2.Length()));
+	return ans;
+}
+
+Vector3 ClosestPoint(const Vector3& point, const Segment& segment) {
+	Vector3 segmentVec = segment.diff - segment.origin;
+	Vector3 startToPoint = point - segment.origin;
+	float t = startToPoint * segmentVec / (segmentVec * segmentVec);
+	
+	return segment.origin + segmentVec * t;
+}
+
 // Windowsアプリでのエントリーポイント(main関数)
 int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 
@@ -335,6 +384,12 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		{ 1.0f, -1.0f, 0.0f }
 	};
 	const float kSpeed = 0.1f;
+
+	Segment segment{ {-2.0f, -1.0f, 0.0f}, {3.0f, 2.0f, 2.0f }};
+	Vector3 point{ -1.5f, 0.6f, 0.6f };
+
+	Vector3 project = Project(point - segment.origin, segment.diff);
+	Vector3 closestPoint = ClosestPoint(point, segment);
 
 	// キー入力結果を受け取る箱
 	char keys[256] = { 0 };
@@ -394,9 +449,20 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		/// ↓描画処理ここから
 		///
 
+		Matrix4x4 normalWVPMatrix = Multiply(MakeAffineMatrix({ 1.0f, 1.0f,1.0f }, {}, {}), Multiply(viewMatrix, projectionMatrix));
+
+		Vector3 start = Transform(Transform(segment.origin, normalWVPMatrix), viewportMatrix);
+		Vector3 end = Transform(Transform(segment.diff, normalWVPMatrix), viewportMatrix);
+		Novice::DrawLine(int(start.x), int(start.y), int(end.x), int(end.y), 0x00ff00ff);
+
+		Sphere pointSphere{ point, 0.01f, 24 };
+		Sphere closestPointSphere{ closestPoint, 0.01f, 24 };
+		DrawSphere(pointSphere, normalWVPMatrix, viewportMatrix, 0xff0000ff);
+		DrawSphere(closestPointSphere, normalWVPMatrix, viewportMatrix, 0x000000ff);
+
 		DrawGrid(Multiply(MakeAffineMatrix({ 1.0f, 1.0f,1.0f }, {}, {}), Multiply(viewMatrix, projectionMatrix)), viewportMatrix);
 
-		DrawSphere({ { 0.0f, 0.0f, 0.0f }, 1.0f, 24 }, Multiply(MakeAffineMatrix({ 1.0f, 1.0f,1.0f }, {}, {}), Multiply(viewMatrix, projectionMatrix)), viewportMatrix, 0xff);
+		//DrawSphere({ { 0.0f, 0.0f, 0.0f }, 1.0f, 24 }, Multiply(MakeAffineMatrix({ 1.0f, 1.0f,1.0f }, {}, {}), Multiply(viewMatrix, projectionMatrix)), viewportMatrix, 0xff);
 
 		/*if (screenVertices[0] * cross(screenVertices[1], screenVertices[2]) <= 0) {
 			Novice::DrawTriangle(int(screenVertices[0].x), int(screenVertices[0].y), int(screenVertices[1].x), int(screenVertices[1].y),
