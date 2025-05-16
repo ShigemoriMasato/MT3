@@ -327,30 +327,6 @@ void DrawSphere(const Sphere& sphere, const Matrix4x4& viewProjectionMatrix, con
 	}
 }
 
-namespace {
-	void input(float* buffer, Vector3 vec) {
-		buffer[0] = vec.x;
-		buffer[1] = vec.y;
-		buffer[2] = vec.z;
-	}
-
-	void output(float buffer[3], Vector3& vec) {
-		vec.x = buffer[0];
-		vec.y = buffer[1];
-		vec.z = buffer[2];
-	}
-}
-
-namespace ImGui {
-	void SliderVector(const char* label, Vector3& vec, float v_min, float v_max) {
-		float buffer[3];
-		input(buffer, vec);
-		if (ImGui::SliderFloat3(label, buffer, v_min, v_max)) {
-			output(buffer, vec);
-		}
-	}
-}
-
 Vector3 Project(const Vector3& v1, const Vector3& v2) {
 	Vector3 ans = v2 * ((v1 * v2) / (v2.Length() * v2.Length()));
 	return ans;
@@ -425,9 +401,10 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		}
 
 		ImGui::Begin("Camera");
-		ImGui::SliderVector("Position", cameraPosition, -10.0f, 10.0f);
-		ImGui::SliderVector("Rotate", CameraRotate, -3.14f, 3.14f);
-		ImGui::SliderVector("Scale", CameraScale, 0.01f, 5.0f);
+		ImGui::SliderFloat3("Position", &cameraPosition.x, -10.0f, 10.0f);
+		ImGui::SliderFloat3("Rotate", &CameraRotate.x, -3.14f, 3.14f);
+		ImGui::SliderFloat3("Scale", &CameraScale.x, 0.01f, 5.0f);
+		ImGui::End();
 
 		Matrix4x4 worldMatrix = MakeAffineMatrix({ 1.0f, 1.0f,1.0f }, rotate, translate);
 		Matrix4x4 cameraMatrix = MakeAffineMatrix(CameraScale, CameraRotate, cameraPosition);
