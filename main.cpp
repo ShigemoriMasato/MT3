@@ -96,6 +96,20 @@ Vector3 Perpendicular(const Vector3& vector) {
 	return { 0.0f, -vector.z, vector.y };
 }
 
+void MakeTrianglePoint(Vector3* trianglePoint, const Plane& plane) {
+	Vector3 center = plane.normal * plane.distance;
+	Vector3 perpendiculars[3];
+	perpendiculars[0] = Perpendicular(plane.normal).Normalize();
+	perpendiculars[1] = { -perpendiculars[0].x, -perpendiculars[0].y, -perpendiculars[0].z };
+	perpendiculars[2] = cross(plane.normal, perpendiculars[0]);
+
+	for (int32_t i = 0; i < 3; ++i) {
+		Vector3 extend = perpendiculars[i] * 2.0f;
+		Vector3 point = center + extend;
+		trianglePoint[i] = point;
+	}
+}
+
 void DrawPlane(const Plane& plane, const Matrix4x4& viewProjectionMatrix, const Matrix4x4& viewportMatrix, uint32_t color) {
 	Vector3 center = plane.normal * plane.distance;
 	Vector3 perpendiculars[4];
@@ -110,8 +124,9 @@ void DrawPlane(const Plane& plane, const Matrix4x4& viewProjectionMatrix, const 
 		Vector3 point = center + extend;
 		points[i] = Transform(Transform(point, viewProjectionMatrix), viewportMatrix);
 	}
-	Novice::DrawLine(int(points[0].x), int(points[0].y), int(points[3].x), int(points[3].y), color);
-	Novice::DrawLine(int(points[3].x), int(points[3].y), int(points[1].x), int(points[1].y), color);
+	//Novice::DrawLine(int(points[0].x), int(points[0].y), int(points[3].x), int(points[3].y), color);
+	//↓これの0を3に書き換えると四角形になる
+	Novice::DrawLine(int(points[0].x), int(points[0].y), int(points[1].x), int(points[1].y), color);
 	Novice::DrawLine(int(points[1].x), int(points[1].y), int(points[2].x), int(points[2].y), color);
 	Novice::DrawLine(int(points[2].x), int(points[2].y), int(points[0].x), int(points[0].y), color);
 }
@@ -135,6 +150,36 @@ bool IsCollition(const Segment& segment, const Plane& plane) {
 	return true;
 }
 
+bool IsCollition(const Segment& segment, const Plane& plane, const Vector3* trianglePoint) {
+	float bn = dot(segment.diff, plane.normal);
+	if (bn == 0.0f) {
+		return false;
+	}
+	float on = dot(segment.origin, plane.normal);
+	float t = (plane.distance - on) / bn;
+	if (t < 0.0f || t > 1.0f) {
+		return false;
+	}
+
+	Vector3 hitpoint = segment.origin + segment.diff * t;
+
+	Vector3 center = (trianglePoint[0] + trianglePoint[1] + trianglePoint[2]) / 3.0f;
+	Vector3 center01 = center - (trianglePoint[0] + trianglePoint[1]) / 2;
+	Vector3 center12 = center - (trianglePoint[1] + trianglePoint[2]) / 2;
+	Vector3 center20 = center - (trianglePoint[2] + trianglePoint[0]) / 2;
+	Vector3 p01 = hitpoint - center01;
+	Vector3 p12 = hitpoint * t - center12;
+	Vector3 p20 = hitpoint * t - center20;
+	
+	if (fabsf(dot(center01.Normalize(), p01.Normalize())) <= 0.5f &&
+		fabsf(dot(center12.Normalize(), p12.Normalize())) <= 0.5f &&
+		fabsf(dot(center20.Normalize(), p20.Normalize())) <= 0.5f) {
+		return true;
+	}
+
+	return false;
+}
+
 // Windowsアプリでのエントリーポイント(main関数)
 int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 
@@ -156,12 +201,12 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	};
 	const float kSpeed = 0.1f;
 
-	Segment segment{ {-2.0f, -2.0f, -1.0f}, {2.0f, 2.0f, 1.0f }};
+	Segment segment{ {-1.0f, -1.0f, 0.5f}, {2.0f, 2.0f, 0.0f }};
 
 	Sphere sphere{ { 0.0f, 0.0f, 0.0f }, 0.3f, 24 };
 	unsigned int color = 0xffffffff;
-	Sphere sphere2{ { 0.0f, 0.0f, 0.0f }, 0.5f, 24 };
-	Vector3 sphere2Position{ 1.0f, 0.0f, 0.0f };
+
+	Vector3 trianglePoint[3]{};
 
 	int click = 0;
 	int preClick = 0;
@@ -272,7 +317,9 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		seg.diff = segment.diff;
 		seg.origin = segment.origin + translate;
 
-		if (IsCollition(seg, plane)) {
+		MakeTrianglePoint(trianglePoint, plane);
+
+		if (IsCollition(seg, plane, trianglePoint)) {
 			color = 0xff0000ff;
 		} else {
 			color = 0xffffffff;
