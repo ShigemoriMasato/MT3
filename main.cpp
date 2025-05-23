@@ -123,13 +123,12 @@ void DrawSegment(const Segment& segment, const Matrix4x4& viewProjectionMatrix, 
 }
 
 bool IsCollition(const Segment& segment, const Plane& plane) {
-	float bn = dot(segment.origin + segment.diff, plane.normal);
-	float d = plane.distance;
+	float bn = dot(segment.diff, plane.normal);
 	if (bn == 0.0f) {
 		return false;
 	}
 	float on = dot(segment.origin, plane.normal);
-	float t = (d - on) / bn;
+	float t = (plane.distance - on) / bn;
 	if (t < 0.0f || t > 1.0f) {
 		return false;
 	}
@@ -146,7 +145,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	Novice::Initialize(kWindowTitle, 1280, 720);
 
 	Vector3 rotate{};
-	Vector3 translate{};
+	Vector3 translate{0.0f, 0.0f, 0.0f};
 	Vector3 cameraPosition{ 0.0f, 1.9f, -6.49f };
 	Vector3 cameraRotate{ 0.26f, 0.0f, 0.0f };
 	Vector3 CameraScale{ 1.0f, 1.0f, 1.0f };
@@ -157,7 +156,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	};
 	const float kSpeed = 0.1f;
 
-	Segment segment{ {-2.0f, -1.0f, 0.0f}, {5.0f, 0.0f, 2.0f }};
+	Segment segment{ {-2.0f, -2.0f, -1.0f}, {2.0f, 2.0f, 1.0f }};
 
 	Sphere sphere{ { 0.0f, 0.0f, 0.0f }, 0.3f, 24 };
 	unsigned int color = 0xffffffff;
@@ -192,7 +191,6 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		///
 		/// ↓更新処理ここから
 		///
-
 		if (keys[DIK_W]) {
 			translate.y += kSpeed;
 		}
@@ -270,7 +268,11 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 
 		plane.normal.Normalize();
 
-		if (IsCollition(segment, plane)) {
+		Segment seg;
+		seg.diff = segment.diff;
+		seg.origin = segment.origin + translate;
+
+		if (IsCollition(seg, plane)) {
 			color = 0xff0000ff;
 		} else {
 			color = 0xffffffff;
@@ -286,7 +288,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		for (uint32_t i = 0; i < 3; i++) {
 			Vector3 ndcVertex = Transform(kLocalVertices[i], worldViewProjectionMatrix);
 			screenVertices[i] = Transform(ndcVertex, viewportMatrix);
-		}
+		} 
 
 		///
 		/// ↑更新処理ここまで
@@ -300,9 +302,9 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 
 		DrawGrid(Multiply(normalWVPMatrix, Multiply(viewMatrix, projectionMatrix)), viewportMatrix);
 
-		DrawSegment(segment, Multiply(MakeAffineMatrix({ 1.0f, 1.0f, 1.0f }, {}, translate), Multiply(viewMatrix, projectionMatrix)), viewportMatrix, color);
+		DrawSegment(seg, normalWVPMatrix, viewportMatrix, color);
 
-		DrawPlane(plane, normalWVPMatrix, viewportMatrix, 0xffffffff);
+		DrawPlane(plane, Multiply(MakeAffineMatrix({ 1.0f, 1.0f,1.0f }, {}, {0.0f, 0.0f, 0.0f}), Multiply(viewMatrix, projectionMatrix)), viewportMatrix, 0xffffffff);
 
 		///
 		/// ↑描画処理ここまで
