@@ -3,291 +3,11 @@
 #include <cmath>
 #include <cassert>
 #include <imgui.h>
+#include "MyMath.h"
 
-const char kWindowTitle[] = "LC1A_10_シゲモリ_マサト_MT3";
+using namespace MyMath;
 
-struct Matrix4x4 {
-	float m[4][4];
-};
-
-struct Vector2 {
-	float x;
-	float y;
-	float z;
-};
-
-struct Vector3 {
-	float x;
-	float y;
-	float z;
-
-	float operator*(const Vector3& v) const {
-		return x * v.x + y * v.y + z * v.z;
-	}
-
-	Vector3 operator*(const float scalar) const {
-		return { x * scalar, y * scalar, z * scalar };
-	}
-
-	Vector3 operator+(const Vector3& v) const {
-		return { x + v.x, y + v.y, z + v.z };
-	}
-
-	Vector3 operator-(const Vector3& v) const {
-		return { x - v.x, y - v.y, z - v.z };
-	}
-
-	float Length()const {
-		return std::sqrtf(x * x + y * y + z * z);
-	}
-
-	Vector3 Normalize() {
-		float length = Length();
-		if (length > 0.0f) {
-			x /= length;
-			y /= length;
-			z /= length;
-		}
-		return { x, y, z };
-	}
-};
-
-struct Sphere {
-	Vector3 center;
-	float radius;
-	uint32_t subdivision;
-};
-
-struct Line {
-	Vector3 origin;
-	Vector3 diff;
-};
-
-struct Ray {
-	Vector3 origin;
-	Vector3 diff;
-};
-
-struct Segment {
-	Vector3 origin;
-	Vector3 diff;
-};
-
-struct Plane {
-	Vector3 normal;
-	float distance;
-};
-
-float cot(float radian) {
-	return 1.0f / tanf(radian);
-}
-
-Vector3 cross(const Vector3& a, const Vector3& b) {
-	return { b.y * a.z - b.z * a.y, b.z * a.x - b.x * a.z, b.x * a.y - b.y * a.x };;
-}
-
-Matrix4x4 MakeTranslateMatrix(const Vector3& translate) {
-
-	return {
-		1, 0, 0, 0,
-		0, 1, 0, 0,
-		0, 0, 1, 0,
-		translate.x, translate.y, translate.z, 1
-	};
-
-}
-
-Matrix4x4 MakeScaleMatrix(const Vector3& scale) {
-
-	return {
-		scale.x, 0, 0, 0,
-		0, scale.y, 0, 0,
-		0, 0, scale.z, 0,
-		0, 0, 0, 1
-	};
-
-}
-
-Matrix4x4 MakeRotateXMatrix(float radius) {
-
-	return {
-		1, 0, 0, 0,
-		0, std::cosf(radius), std::sinf(radius), 0,
-		0, -std::sinf(radius), std::cosf(radius), 0,
-		0, 0, 0, 1
-	};
-
-}
-
-Matrix4x4 MakeRotateYMatrix(float radius) {
-
-	return {
-		std::cosf(radius), 0, -std::sinf(radius), 0,
-		0, 1, 0, 0,
-		std::sinf(radius), 0, std::cosf(radius), 0,
-		0, 0, 0, 1
-	};
-
-}
-
-Matrix4x4 MakeRotateZMatrix(float radius) {
-
-	return { std::cosf(radius), std::sinf(radius), 0, 0,
-		-std::sinf(radius), std::cosf(radius), 0, 0,
-		0, 0, 1, 0,
-		0, 0, 0, 1 };
-
-}
-
-Matrix4x4 Multiply(const Matrix4x4& a, const Matrix4x4& b) {
-	Matrix4x4 result = {};
-	for (int i = 0; i < 4; ++i) {
-		for (int j = 0; j < 4; ++j) {
-			for (int k = 0; k < 4; ++k) {
-				result.m[i][j] += a.m[i][k] * b.m[k][j];
-			}
-		}
-	}
-	return result;
-}
-
-Matrix4x4 MakeAffineMatrix(const Vector3& scale, const Vector3& rotate, const Vector3& translate) {
-	Matrix4x4 scaleMatrix = MakeScaleMatrix(scale);
-	Matrix4x4 rotateMatrix = Multiply(MakeRotateXMatrix(rotate.x), Multiply(MakeRotateYMatrix(rotate.y), MakeRotateZMatrix(rotate.z)));
-	Matrix4x4 translateMatrix = MakeTranslateMatrix(translate);
-	return Multiply(Multiply(scaleMatrix, rotateMatrix), translateMatrix);
-}
-
-void MatrixScreenPrintf(int x, int y, const Matrix4x4& mat, const char* label) {
-	Novice::ScreenPrintf(x, y, "%s", label);
-	for (int i = 1; i < 5; ++i) {
-		for (int j = 0; j < 4; j++) {
-			Novice::ScreenPrintf(x + j * 80, y + i * 20, "%.2f", mat.m[i - 1][j]);
-		}
-	}
-}
-
-Matrix4x4 MakePerspectiveFovMatrix(float fovY, float aspectRatio, float nearClip, float farClip) {
-	return {
-		cot(fovY / 2) / aspectRatio, 0, 0, 0,
-		0, cot(fovY / 2), 0, 0,
-		0, 0, farClip / (farClip - nearClip), 1,
-		0, 0, (-nearClip * farClip) / (farClip - nearClip), 0
-	};
-}
-
-Matrix4x4 MakeOrthographicMatrix(float left, float top, float right, float bottom, float nearClip, float farClip) {
-	return {
-		2 / (right - left), 0, 0, 0,
-		0, 2 / (top - bottom), 0, 0,
-		0, 0, 1 / (farClip - nearClip), 0,
-		(left + right) / (left - right), (top + bottom) / (bottom - top), nearClip / (nearClip - farClip), 1
-	};
-}
-
-Matrix4x4 MakeViewportMatrix(float left, float top, float width, float height, float minDepth, float maxDepth) {
-	return {
-		width / 2, 0, 0, 0,
-		0, -height / 2, 0, 0,
-		0, 0, maxDepth - minDepth, 0,
-		left + width / 2, top + height / 2, minDepth, 1
-	};
-}
-
-Matrix4x4 Inverse(const Matrix4x4& a) {
-
-	float d = a.m[0][0] * a.m[1][1] * a.m[2][2] * a.m[3][3]
-		+ a.m[0][0] * a.m[1][2] * a.m[2][3] * a.m[3][1]
-		+ a.m[0][0] * a.m[1][3] * a.m[2][1] * a.m[3][2]
-		- a.m[0][0] * a.m[1][3] * a.m[2][2] * a.m[3][1]
-		- a.m[0][0] * a.m[1][2] * a.m[2][1] * a.m[3][3]
-		- a.m[0][0] * a.m[1][1] * a.m[2][3] * a.m[3][2]
-		- a.m[0][1] * a.m[1][0] * a.m[2][2] * a.m[3][3]
-		- a.m[0][2] * a.m[1][0] * a.m[2][3] * a.m[3][1]
-		- a.m[0][3] * a.m[1][0] * a.m[2][1] * a.m[3][2]
-		+ a.m[0][3] * a.m[1][0] * a.m[2][2] * a.m[3][1]
-		+ a.m[0][2] * a.m[1][0] * a.m[2][1] * a.m[3][3]
-		+ a.m[0][1] * a.m[1][0] * a.m[2][3] * a.m[3][2]
-		+ a.m[0][1] * a.m[1][2] * a.m[2][0] * a.m[3][3]
-		+ a.m[0][2] * a.m[1][3] * a.m[2][0] * a.m[3][1]
-		+ a.m[0][3] * a.m[1][1] * a.m[2][0] * a.m[3][2]
-		- a.m[0][3] * a.m[1][2] * a.m[2][0] * a.m[3][1]
-		- a.m[0][2] * a.m[1][1] * a.m[2][0] * a.m[3][3]
-		- a.m[0][1] * a.m[1][3] * a.m[2][0] * a.m[3][2]
-		- a.m[0][1] * a.m[1][2] * a.m[2][3] * a.m[3][0]
-		- a.m[0][2] * a.m[1][3] * a.m[2][1] * a.m[3][0]
-		- a.m[0][3] * a.m[1][1] * a.m[2][2] * a.m[3][0]
-		+ a.m[0][3] * a.m[1][2] * a.m[2][1] * a.m[3][0]
-		+ a.m[0][2] * a.m[1][1] * a.m[2][3] * a.m[3][0]
-		+ a.m[0][1] * a.m[1][3] * a.m[2][2] * a.m[3][0];
-
-	assert(fabsf(d) > 1e-6f);
-
-	return {
-		(a.m[1][1] * a.m[2][2] * a.m[3][3] + a.m[1][2] * a.m[2][3] * a.m[3][1] + a.m[1][3] * a.m[2][1] * a.m[3][2]
-			- a.m[1][3] * a.m[2][2] * a.m[3][1] - a.m[1][2] * a.m[2][1] * a.m[3][3] - a.m[1][1] * a.m[2][3] * a.m[3][2]) / d,
-		-(a.m[0][1] * a.m[2][2] * a.m[3][3] + a.m[0][2] * a.m[2][3] * a.m[3][1] + a.m[0][3] * a.m[2][1] * a.m[3][2]
-			- a.m[0][3] * a.m[2][2] * a.m[3][1] - a.m[0][2] * a.m[2][1] * a.m[3][3] - a.m[0][1] * a.m[2][3] * a.m[3][2]) / d,
-		(a.m[0][1] * a.m[1][2] * a.m[3][3] + a.m[0][2] * a.m[1][3] * a.m[3][1] + a.m[0][3] * a.m[1][1] * a.m[3][2]
-			- a.m[0][3] * a.m[1][2] * a.m[3][1] - a.m[0][2] * a.m[1][1] * a.m[3][3] - a.m[0][1] * a.m[1][3] * a.m[3][2]) / d,
-		-(a.m[0][1] * a.m[1][2] * a.m[2][3] + a.m[0][2] * a.m[1][3] * a.m[2][1] + a.m[0][3] * a.m[1][1] * a.m[2][2]
-			- a.m[0][3] * a.m[1][2] * a.m[2][1] - a.m[0][2] * a.m[1][1] * a.m[2][3] - a.m[0][1] * a.m[1][3] * a.m[2][2]) / d,
-
-		-(a.m[1][0] * a.m[2][2] * a.m[3][3] + a.m[1][2] * a.m[2][3] * a.m[3][0] + a.m[1][3] * a.m[2][0] * a.m[3][2]
-			- a.m[1][3] * a.m[2][2] * a.m[3][0] - a.m[1][2] * a.m[2][0] * a.m[3][3] - a.m[1][0] * a.m[2][3] * a.m[3][2]) / d,
-		(a.m[0][0] * a.m[2][2] * a.m[3][3] + a.m[0][2] * a.m[2][3] * a.m[3][0] + a.m[0][3] * a.m[2][0] * a.m[3][2]
-			- a.m[0][3] * a.m[2][2] * a.m[3][0] - a.m[0][2] * a.m[2][0] * a.m[3][3] - a.m[0][0] * a.m[2][3] * a.m[3][2]) / d,
-		-(a.m[0][0] * a.m[1][2] * a.m[3][3] + a.m[0][2] * a.m[1][3] * a.m[3][0] + a.m[0][3] * a.m[1][0] * a.m[3][2]
-			- a.m[0][3] * a.m[1][2] * a.m[3][0] - a.m[0][2] * a.m[1][0] * a.m[3][3] - a.m[0][0] * a.m[1][3] * a.m[3][2]) / d,
-		(a.m[0][0] * a.m[1][2] * a.m[2][3] + a.m[0][2] * a.m[1][3] * a.m[2][0] + a.m[0][3] * a.m[1][0] * a.m[2][2]
-			- a.m[0][3] * a.m[1][2] * a.m[2][0] - a.m[0][2] * a.m[1][0] * a.m[2][3] - a.m[0][0] * a.m[1][3] * a.m[2][2]) / d,
-
-		(a.m[1][0] * a.m[2][1] * a.m[3][3] + a.m[1][1] * a.m[2][3] * a.m[3][0] + a.m[1][3] * a.m[2][0] * a.m[3][1]
-			- a.m[1][3] * a.m[2][1] * a.m[3][0] - a.m[1][1] * a.m[2][0] * a.m[3][3] - a.m[1][0] * a.m[2][3] * a.m[3][1]) / d,
-		-(a.m[0][0] * a.m[2][1] * a.m[3][3] + a.m[0][1] * a.m[2][3] * a.m[3][0] + a.m[0][3] * a.m[2][0] * a.m[3][1]
-			- a.m[0][3] * a.m[2][1] * a.m[3][0] - a.m[0][1] * a.m[2][0] * a.m[3][3] - a.m[0][0] * a.m[2][3] * a.m[3][1]) / d,
-		(a.m[0][0] * a.m[1][1] * a.m[3][3] + a.m[0][1] * a.m[1][3] * a.m[3][0] + a.m[0][3] * a.m[1][0] * a.m[3][1]
-			- a.m[0][3] * a.m[1][1] * a.m[3][0] - a.m[0][1] * a.m[1][0] * a.m[3][3] - a.m[0][0] * a.m[1][3] * a.m[3][1]) / d,
-		-(a.m[0][0] * a.m[1][1] * a.m[2][3] + a.m[0][1] * a.m[1][3] * a.m[2][0] + a.m[0][3] * a.m[1][0] * a.m[2][1]
-			- a.m[0][3] * a.m[1][1] * a.m[2][0] - a.m[0][1] * a.m[1][0] * a.m[2][3] - a.m[0][0] * a.m[1][3] * a.m[2][1]) / d,
-
-		-(a.m[1][0] * a.m[2][1] * a.m[3][2] + a.m[1][1] * a.m[2][2] * a.m[3][0] + a.m[1][2] * a.m[2][0] * a.m[3][1]
-			- a.m[1][2] * a.m[2][1] * a.m[3][0] - a.m[1][1] * a.m[2][0] * a.m[3][2] - a.m[1][0] * a.m[2][2] * a.m[3][1]) / d,
-		(a.m[0][0] * a.m[2][1] * a.m[3][2] + a.m[0][1] * a.m[2][2] * a.m[3][0] + a.m[0][2] * a.m[2][0] * a.m[3][1]
-			- a.m[0][2] * a.m[2][1] * a.m[3][0] - a.m[0][1] * a.m[2][0] * a.m[3][2] - a.m[0][0] * a.m[2][2] * a.m[3][1]) / d,
-		-(a.m[0][0] * a.m[1][1] * a.m[3][2] + a.m[0][1] * a.m[1][2] * a.m[3][0] + a.m[0][2] * a.m[1][0] * a.m[3][1]
-			- a.m[0][2] * a.m[1][1] * a.m[3][0] - a.m[0][1] * a.m[1][0] * a.m[3][2] - a.m[0][0] * a.m[1][2] * a.m[3][1]) / d,
-		(a.m[0][0] * a.m[1][1] * a.m[2][2] + a.m[0][1] * a.m[1][2] * a.m[2][0] + a.m[0][2] * a.m[1][0] * a.m[2][1]
-			- a.m[0][2] * a.m[1][1] * a.m[2][0] - a.m[0][1] * a.m[1][0] * a.m[2][2] - a.m[0][0] * a.m[1][2] * a.m[2][1]) / d
-	};
-}
-
-Vector3 Transform(const Vector3& vector, const Matrix4x4& matrix) {
-	Vector3 ans;
-	ans.x = vector.x * matrix.m[0][0] + vector.y * matrix.m[1][0] + vector.z * matrix.m[2][0] + matrix.m[3][0];
-	ans.y = vector.x * matrix.m[0][1] + vector.y * matrix.m[1][1] + vector.z * matrix.m[2][1] + matrix.m[3][1];
-	ans.z = vector.x * matrix.m[0][2] + vector.y * matrix.m[1][2] + vector.z * matrix.m[2][2] + matrix.m[3][2];
-	float w = vector.x * matrix.m[0][3] + vector.y * matrix.m[1][3] + vector.z * matrix.m[2][3] + matrix.m[3][3];
-	assert(w != 0.0f);
-	ans.x /= w;
-	ans.y /= w;
-	ans.z /= w;
-	return ans;
-}
-
-//debug用
-unsigned int ColorLarp(unsigned int color, unsigned int targetColor, float rate) {
-	unsigned int r = (color >> 24) & 0xFF;
-	unsigned int g = (color >> 16) & 0xFF;
-	unsigned int b = (color >> 8) & 0xFF;
-	unsigned int targetR = (targetColor >> 24) & 0xFF;
-	unsigned int targetG = (targetColor >> 16) & 0xFF;
-	unsigned int targetB = (targetColor >> 8) & 0xFF;
-	r += int((targetR - r) * rate);
-	g += int((targetG - g) * rate);
-	b += int((targetB - b) * rate);
-	return (r << 24) | (g << 16) | (b << 8) | 0xff;
-}
+const char kWindowTitle[] = "LE2A_06_シゲモリ_マサト_MT3";
 
 void DrawGrid(const Matrix4x4& viewProjectionMatrix, const Matrix4x4& viewportMatrix) {
 	const float kGrigHalfWidth = 2.0f;
@@ -356,13 +76,13 @@ Vector3 Project(const Vector3& v1, const Vector3& v2) {
 Vector3 ClosestPoint(const Vector3& point, const Segment& segment) {
 	Vector3 segmentVec = segment.diff - segment.origin;
 	Vector3 startToPoint = point - segment.origin;
-	float t = startToPoint * segmentVec / (segmentVec * segmentVec);
+	float t = dot(startToPoint, segmentVec / (segmentVec * segmentVec));
 	
 	return segment.origin + segmentVec * t;
 }
 
 bool IsCollition(const Sphere& sphere, const Plane& plane) {
-	float distance = sphere.center * plane.normal - plane.distance;
+	float distance = dot(sphere.center, plane.normal) - plane.distance;
 	if (distance < sphere.radius && -sphere.radius < distance) {
 		return true;
 	}
@@ -396,6 +116,26 @@ void DrawPlane(const Plane& plane, const Matrix4x4& viewProjectionMatrix, const 
 	Novice::DrawLine(int(points[2].x), int(points[2].y), int(points[0].x), int(points[0].y), color);
 }
 
+void DrawSegment(const Segment& segment, const Matrix4x4& viewProjectionMatrix, const Matrix4x4& viewportMatrix, uint32_t color) {
+	Vector3 start = segment.origin * viewProjectionMatrix * viewportMatrix;
+	Vector3 end = (segment.origin + segment.diff) * viewProjectionMatrix * viewportMatrix;
+	Novice::DrawLine(int(start.x), int(start.y), int(end.x), int(end.y), color);
+}
+
+bool IsCollition(const Segment& segment, const Plane& plane) {
+	float bn = dot(segment.origin + segment.diff, plane.normal);
+	float d = plane.distance;
+	if (bn == 0.0f) {
+		return false;
+	}
+	float on = dot(segment.origin, plane.normal);
+	float t = (d - on) / bn;
+	if (t < 0.0f || t > 1.0f) {
+		return false;
+	}
+	return true;
+}
+
 // Windowsアプリでのエントリーポイント(main関数)
 int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 
@@ -417,11 +157,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	};
 	const float kSpeed = 0.1f;
 
-	Segment segment{ {-2.0f, -1.0f, 0.0f}, {3.0f, 2.0f, 2.0f }};
-	Vector3 point{ -1.5f, 0.6f, 0.6f };
-
-	Vector3 project = Project(point - segment.origin, segment.diff);
-	Vector3 closestPoint = ClosestPoint(point, segment);
+	Segment segment{ {-2.0f, -1.0f, 0.0f}, {5.0f, 0.0f, 2.0f }};
 
 	Sphere sphere{ { 0.0f, 0.0f, 0.0f }, 0.3f, 24 };
 	unsigned int color = 0xffffffff;
@@ -501,12 +237,6 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 			defaultMousePosition = nowMousePosition;
 		}
 
-		if ((translate - sphere2Position).Length() < sphere.radius + sphere2.radius) {
-			color = 0xff0000ff;
-		} else {
-			color = 0xffffffff;
-		}
-
 		if (keys[DIK_LCONTROL] && click) {
 			int x;
 			int y;
@@ -540,7 +270,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 
 		plane.normal.Normalize();
 
-		if (IsCollition(sphere, plane)) {
+		if (IsCollition(segment, plane)) {
 			color = 0xff0000ff;
 		} else {
 			color = 0xffffffff;
@@ -561,7 +291,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		///
 		/// ↑更新処理ここまで
 		///
-
+		
 		///
 		/// ↓描画処理ここから
 		///
@@ -570,9 +300,9 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 
 		DrawGrid(Multiply(normalWVPMatrix, Multiply(viewMatrix, projectionMatrix)), viewportMatrix);
 
-		DrawSphere(sphere, Multiply(MakeAffineMatrix({ 1.0f, 1.0f, 1.0f }, {}, {0.0f, 0.0f, 1.0f}), Multiply(viewMatrix, projectionMatrix)), viewportMatrix, color);
+		DrawSegment(segment, Multiply(MakeAffineMatrix({ 1.0f, 1.0f, 1.0f }, {}, translate), Multiply(viewMatrix, projectionMatrix)), viewportMatrix, color);
 
-		DrawPlane(plane, Multiply(MakeAffineMatrix({ 1.0f, 1.0f, 1.0f }, {}, translate), Multiply(viewMatrix, projectionMatrix)), viewportMatrix, color);
+		DrawPlane(plane, normalWVPMatrix, viewportMatrix, 0xffffffff);
 
 		///
 		/// ↑描画処理ここまで
