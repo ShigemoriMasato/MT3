@@ -69,6 +69,10 @@ struct Plane {
 	float distance;
 };
 
+struct Triangle {
+	Vector3 vertices[3];
+};
+
 Matrix4x4 MakeTranslateMatrix(const Vector3& translate);
 
 Matrix4x4 MakeScaleMatrix(const Vector3& scale);

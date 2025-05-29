@@ -96,7 +96,7 @@ Vector3 Perpendicular(const Vector3& vector) {
 	return { 0.0f, -vector.z, vector.y };
 }
 
-void MakeTrianglePoint(Vector3* trianglePoint, const Plane& plane) {
+void MakeTrianglePoint(Triangle& triangle, const Plane& plane) {
 	Vector3 center = plane.normal * plane.distance;
 	Vector3 perpendiculars[3];
 	perpendiculars[0] = Perpendicular(plane.normal).Normalize();
@@ -106,7 +106,7 @@ void MakeTrianglePoint(Vector3* trianglePoint, const Plane& plane) {
 	for (int32_t i = 0; i < 3; ++i) {
 		Vector3 extend = perpendiculars[i] * 2.0f;
 		Vector3 point = center + extend;
-		trianglePoint[i] = point;
+		triangle.vertices[i] = point;
 	}
 }
 
@@ -150,7 +150,11 @@ bool IsCollition(const Segment& segment, const Plane& plane) {
 	return true;
 }
 
-bool IsCollition(const Segment& segment, const Plane& plane, const Vector3* trianglePoint) {
+bool IsCollition(const Segment& segment, const Triangle& triangle) {
+	Plane plane;
+	plane.normal = cross(triangle.vertices[1] - triangle.vertices[0], triangle.vertices[2] - triangle.vertices[1]).Normalize();
+	plane.distance = dot(plane.normal, triangle.vertices[0]);
+
 	float bn = dot(segment.diff, plane.normal);
 	if (bn == 0.0f) {
 		return false;
@@ -162,22 +166,41 @@ bool IsCollition(const Segment& segment, const Plane& plane, const Vector3* tria
 	}
 
 	Vector3 hitpoint = segment.origin + segment.diff * t;
-
-	Vector3 center = (trianglePoint[0] + trianglePoint[1] + trianglePoint[2]) / 3.0f;
-	Vector3 center01 = center - (trianglePoint[0] + trianglePoint[1]) / 2;
-	Vector3 center12 = center - (trianglePoint[1] + trianglePoint[2]) / 2;
-	Vector3 center20 = center - (trianglePoint[2] + trianglePoint[0]) / 2;
-	Vector3 p01 = hitpoint - center01;
-	Vector3 p12 = hitpoint * t - center12;
-	Vector3 p20 = hitpoint * t - center20;
 	
-	if (fabsf(dot(center01.Normalize(), p01.Normalize())) <= 0.5f &&
-		fabsf(dot(center12.Normalize(), p12.Normalize())) <= 0.5f &&
-		fabsf(dot(center20.Normalize(), p20.Normalize())) <= 0.5f) {
+	Vector3 center = (triangle.vertices[0] + triangle.vertices[1] + triangle.vertices[2]) / 3.0f;
+	Vector3 center01 = center - (triangle.vertices[0] + triangle.vertices[1]) / 2;
+	Vector3 center12 = center - (triangle.vertices[1] + triangle.vertices[2]) / 2;
+	Vector3 center20 = center - (triangle.vertices[2] + triangle.vertices[0]) / 2;
+	Vector3 p01 = hitpoint - (triangle.vertices[0] + triangle.vertices[1]) / 2;
+	Vector3 p12 = hitpoint - (triangle.vertices[1] + triangle.vertices[2]) / 2;
+	Vector3 p20 = hitpoint - (triangle.vertices[2] + triangle.vertices[0]) / 2;
+	
+	float a = dot(center01.Normalize(), p01.Normalize());
+	float b = dot(center12.Normalize(), p12.Normalize());
+	float c = dot(center20.Normalize(), p20.Normalize());
+
+	ImGui::Begin("Segment");
+	ImGui::Text("hitpoint: (%.2f, %.2f, %.2f)", hitpoint.x, hitpoint.y, hitpoint.z);
+	ImGui::Text("a: %.2f", a);
+	ImGui::Text("b: %.2f", b);
+	ImGui::Text("c: %.2f", c);
+	ImGui::End();
+
+	if (a >= 0.0f &&
+		b >= 0.0f &&
+		c >= 0.0f) {
 		return true;
 	}
 
 	return false;
+}
+
+void DrawTriangle(const Triangle& triangle, const Matrix4x4& viewProjectionMatrix, const Matrix4x4& viewportMatrix, uint32_t color) {
+	for(int i = 0; i < 3; ++i) {
+		Vector3 start = Transform(Transform(triangle.vertices[i], viewProjectionMatrix), viewportMatrix);
+		Vector3 end = Transform(Transform(triangle.vertices[(i + 1) % 3], viewProjectionMatrix), viewportMatrix);
+		Novice::DrawLine(int(start.x), int(start.y), int(end.x), int(end.y), color);
+	}
 }
 
 // Windowsアプリでのエントリーポイント(main関数)
@@ -206,7 +229,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	Sphere sphere{ { 0.0f, 0.0f, 0.0f }, 0.3f, 24 };
 	unsigned int color = 0xffffffff;
 
-	Vector3 trianglePoint[3]{};
+	Triangle trianglePoint{};
 
 	int click = 0;
 	int preClick = 0;
@@ -317,9 +340,14 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		seg.diff = segment.diff;
 		seg.origin = segment.origin + translate;
 
+		ImGui::Begin("Segment");
+		ImGui::Text("Origin: (%.2f, %.2f, %.2f)", seg.origin.x, seg.origin.y, seg.origin.z);
+		ImGui::Text("Diff: (%.2f, %.2f, %.2f)", seg.diff.x, seg.diff.y, seg.diff.z);
+		ImGui::End();
+
 		MakeTrianglePoint(trianglePoint, plane);
 
-		if (IsCollition(seg, plane, trianglePoint)) {
+		if (IsCollition(seg, trianglePoint)) {
 			color = 0xff0000ff;
 		} else {
 			color = 0xffffffff;
