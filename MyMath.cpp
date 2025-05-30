@@ -1,5 +1,6 @@
 ﻿#include "MyMath.h"
 #include <cmath>
+#include <algorithm>
 #include <cassert>
 #include <Novice.h>
 
@@ -179,6 +180,14 @@ Vector3 MyMath::Perpendicular(const Vector3& vector) {
 		return { -vector.y, vector.x, 0.0f };
 	}
 	return { 0.0f, -vector.z, vector.y };
+}
+
+Vector3 MyMath::clamp(const Vector3& value, const Vector3& min, const Vector3& max) {
+	return {
+		std::clamp(value.x, min.x, max.x),
+		std::clamp(value.y, min.y, max.y),
+		std::clamp(value.z, min.z, max.z)
+	};
 }
 
 Matrix4x4 MakeTranslateMatrix(const Vector3& translate) {

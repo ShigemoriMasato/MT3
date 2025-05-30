@@ -120,4 +120,6 @@ namespace MyMath {
 
 	Vector3 Perpendicular(const Vector3& vector);
 
+	Vector3 clamp(const Vector3& value, const Vector3& min, const Vector3& max);
+
 }

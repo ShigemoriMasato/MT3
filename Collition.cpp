@@ -69,3 +69,9 @@ bool IsCollition(const AABB& a, const AABB& b) {
 		a.min.y <= b.max.y && a.max.y >= b.min.y &&
 		a.min.z <= b.max.z && a.max.z >= b.min.z);
 }
+
+bool IsCollition(const AABB& aabb, const Sphere& sphere) {
+	Vector3 closestPoint = clamp(sphere.center, aabb.min, aabb.max);
+	float distance = (sphere.center - closestPoint).Length();
+	return distance <= sphere.radius;
+}
