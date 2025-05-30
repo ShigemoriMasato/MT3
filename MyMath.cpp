@@ -162,6 +162,25 @@ float MyMath::dot(const Vector3& a, const Vector3& b) {
 	return a.x * b.x + a.y * b.y + a.z * b.z;
 }
 
+Vector3 MyMath::Project(const Vector3& v1, const Vector3& v2) {
+	return v2 * ((v1 * v2) / (v2.Length() * v2.Length()));
+}
+
+Vector3 MyMath::ClosestPoint(const Vector3& point, const Segment& segment) {
+	Vector3 segmentVec = segment.diff;
+	Vector3 startToPoint = point - segment.origin;
+	float t = dot(startToPoint, segmentVec / (segmentVec * segmentVec));
+
+	return segment.origin + segmentVec * t;
+}
+
+Vector3 MyMath::Perpendicular(const Vector3& vector) {
+	if (vector.x != 0.0f || vector.y != 0.0f) {
+		return { -vector.y, vector.x, 0.0f };
+	}
+	return { 0.0f, -vector.z, vector.y };
+}
+
 Matrix4x4 MakeTranslateMatrix(const Vector3& translate) {
 
 	return {

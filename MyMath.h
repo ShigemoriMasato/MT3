@@ -73,6 +73,11 @@ struct Triangle {
 	Vector3 vertices[3];
 };
 
+struct AABB {
+	Vector3 min;
+	Vector3 max;
+};
+
 Matrix4x4 MakeTranslateMatrix(const Vector3& translate);
 
 Matrix4x4 MakeScaleMatrix(const Vector3& scale);
@@ -108,5 +113,11 @@ namespace MyMath {
 	float dot(const Vector3& a, const Vector3& b);
 
 	unsigned int ColorLarp(unsigned int color, unsigned int targetColor, float rate);
+
+	Vector3 Project(const Vector3& v1, const Vector3& v2);
+
+	Vector3 ClosestPoint(const Vector3& point, const Segment& segment);
+
+	Vector3 Perpendicular(const Vector3& vector);
 
 }
