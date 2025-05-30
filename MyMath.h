@@ -16,6 +16,11 @@ struct Vector3 {
 	float z;
 
 	float Length()const;
+	/// <summary>
+	/// Lighter version of Length()
+	/// </summary>
+	/// <returns>Length without sqrt()</returns>
+	float LengthL()const;
 
 	Vector3 Normalize();
 };

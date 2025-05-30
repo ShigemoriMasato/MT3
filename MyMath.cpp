@@ -142,7 +142,7 @@ float MyMath::cot(float radian) {
 }
 
 Vector3 MyMath::cross(const Vector3& a, const Vector3& b) {
-	return { b.y * a.z - b.z * a.y, b.z * a.x - b.x * a.z, b.x * a.y - b.y * a.x };
+	return { a.y * b.z - a.z * b.y, a.z * b.x - a.x * b.z, a.x * b.y - a.y * b.x };
 }
 
 //debug用
@@ -381,6 +381,10 @@ Vector3 Transform(const Vector3& vector, const Matrix4x4& matrix) {
 
 float Vector3::Length() const {
 	return std::sqrtf(x * x + y * y + z * z);
+}
+
+float Vector3::LengthL() const {
+	return (x * x + y * y + z * z);
 }
 
 Vector3 Vector3::Normalize() {

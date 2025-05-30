@@ -35,19 +35,23 @@ void DrawSphere(const Sphere& sphere, const Matrix4x4& viewProjectionMatrix, con
 	//緯度方向に分解
 	for (uint32_t latIndex = 0; latIndex < kSubdivision; ++latIndex) {
 		float lat = (float)-M_PI / 2 + kLatEvery * latIndex;
+		float sinlat = std::sinf(lat);
+		float coslat = std::cosf(lat);
 		//経度方向に分解
 		for (uint32_t lonIndex = 0; lonIndex < kSubdivision; ++lonIndex) {
 			float lon = lonIndex * kLonEvery;
+			float sinlon = std::sinf(lon);
+			float coslon = std::cosf(lon);
 			Vector3 a, b, c;
-			a = { sphere.center.x + sphere.radius * std::cosf(lat) * std::cosf(lon),
-				sphere.center.y + sphere.radius * std::sinf(lat),
-				sphere.center.z + sphere.radius * std::cosf(lat) * std::sinf(lon) };
-			b = { sphere.center.x + sphere.radius * std::cosf(lat + kLatEvery) * std::cosf(lon),
+			a = { sphere.center.x + sphere.radius * coslat * coslon,
+				sphere.center.y + sphere.radius * sinlat,
+				sphere.center.z + sphere.radius * coslat * sinlon };
+			b = { sphere.center.x + sphere.radius * std::cosf(lat + kLatEvery) * coslon,
 				sphere.center.y + sphere.radius * std::sinf(lat + kLatEvery),
-				sphere.center.z + sphere.radius * std::cosf(lat + kLatEvery) * std::sinf(lon) };
-			c = { sphere.center.x + sphere.radius * std::cosf(lat) * std::cosf(lon + kLonEvery),
-				sphere.center.y + sphere.radius * std::sinf(lat),
-				sphere.center.z + sphere.radius * std::cosf(lat) * std::sinf(lon + kLonEvery) };
+				sphere.center.z + sphere.radius * std::cosf(lat + kLatEvery) * sinlon };
+			c = { sphere.center.x + sphere.radius * coslat * std::cosf(lon + kLonEvery),
+				sphere.center.y + sphere.radius * sinlat,
+				sphere.center.z + sphere.radius * coslat * std::sinf(lon + kLonEvery) };
 
 			a = Transform(Transform(a, viewProjectionMatrix), viewportMatrix);
 			b = Transform(Transform(b, viewProjectionMatrix), viewportMatrix);

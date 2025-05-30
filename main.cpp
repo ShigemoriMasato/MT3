@@ -52,8 +52,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	int preClick = 0;
 
 	AABB aabb{ { -1.0f, -1.0f, -1.0f }, { 1.0f, 1.0f, 1.0f } };
-
-	Sphere sphere{ { 0.0f, 0.0f, 0.0f }, 1.0f, 16 };
+	Segment segment = { -1.0f, -1.0f, -1.0f, 2.0f, 2.0f, 2.0f };
 
 	// キー入力結果を受け取る箱
 	char keys[256] = { 0 };
@@ -107,7 +106,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 
 		AABB worldAABB = { aabb.min + translate, aabb.max + translate };
 
-		if (IsCollition(worldAABB, sphere)) {
+		if (IsCollition(worldAABB, segment)) {
 			color = 0xff0000ff;
 		} else {
 			color = 0xffffffff;
@@ -143,7 +142,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		DrawGrid(Multiply(normalWVPMatrix, Multiply(viewMatrix, projectionMatrix)), viewportMatrix);
 
 		DrawAABB(worldAABB, normalWVPMatrix, viewportMatrix, color);
-		DrawSphere(sphere, normalWVPMatrix, viewportMatrix, 0xffffffff);
+		DrawSegment(segment, normalWVPMatrix, viewportMatrix, 0x00ff00ff);
 
 		///
 		/// ↑描画処理ここまで

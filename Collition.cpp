@@ -75,3 +75,19 @@ bool IsCollition(const AABB& aabb, const Sphere& sphere) {
 	float distance = (sphere.center - closestPoint).Length();
 	return distance <= sphere.radius;
 }
+
+bool IsCollition(const AABB& aabb, const Segment& segment) {
+	float tNearX = std::fmin(aabb.min.x, aabb.max.x);
+	float tFarX = std::fmax(aabb.min.x, aabb.max.x);
+	float tNearY = std::fmin(aabb.min.y, aabb.max.y);
+	float tFarY = std::fmax(aabb.min.y, aabb.max.y);
+	float tNearZ = std::fmin(aabb.min.z, aabb.max.z);
+	float tFarZ = std::fmax(aabb.min.z, aabb.max.z);
+
+	float tmin = std::fmax(std::fmax(tNearX, tNearY), tNearZ);
+	float tmax = std::fmin(std::fmin(tFarX, tFarY), tFarZ);
+
+	if (tmin <= tmax) {
+		return true;
+	}
+}
