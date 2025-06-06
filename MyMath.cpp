@@ -1,5 +1,7 @@
 ﻿#include "MyMath.h"
 #include <cmath>
+#define min(a, b) ((a) < (b) ? (a) : (b))
+#define max(a, b) ((a) > (b) ? (a) : (b))
 #include <algorithm>
 #include <cassert>
 #include <Novice.h>

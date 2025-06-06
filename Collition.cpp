@@ -2,8 +2,19 @@
 #include <Novice.h>
 #define _USE_MATH_DEFINES
 #include <cmath>
+#include <imgui.h>
 
 using namespace MyMath;
+
+float ClosestPoint(const Segment& segment, const Vector3& normal, const float distance) {
+	float bn = dot(segment.diff, normal);
+	if (bn == 0.0f) {
+		return 0.0f; // 平行な場合は距離を返す
+	}
+	float on = dot(segment.origin, normal);
+	float t = (distance - on) / bn;
+	return t;
+}
 
 bool IsCollition(const Sphere& sphere, const Plane& plane) {
 	float distance = dot(sphere.center, plane.normal) - plane.distance;
@@ -14,12 +25,7 @@ bool IsCollition(const Sphere& sphere, const Plane& plane) {
 }
 
 bool IsCollition(const Segment& segment, const Plane& plane) {
-	float bn = dot(segment.diff, plane.normal);
-	if (bn == 0.0f) {
-		return false;
-	}
-	float on = dot(segment.origin, plane.normal);
-	float t = (plane.distance - on) / bn;
+	float t = ClosestPoint(segment, plane.normal, plane.distance);
 	if (t < 0.0f || t > 1.0f) {
 		return false;
 	}
@@ -27,16 +33,8 @@ bool IsCollition(const Segment& segment, const Plane& plane) {
 }
 
 bool IsCollition(const Segment& segment, const Triangle& triangle) {
-	Plane plane;
-	plane.normal = cross(triangle.vertices[1] - triangle.vertices[0], triangle.vertices[2] - triangle.vertices[1]).Normalize();
-	plane.distance = dot(plane.normal, triangle.vertices[0]);
-
-	float bn = dot(segment.diff, plane.normal);
-	if (bn == 0.0f) {
-		return false;
-	}
-	float on = dot(segment.origin, plane.normal);
-	float t = (plane.distance - on) / bn;
+	Vector3 normal = cross(triangle.vertices[1] - triangle.vertices[0], triangle.vertices[2] - triangle.vertices[1]).Normalize();
+	float t = ClosestPoint(segment, normal, dot(normal, triangle.vertices[0]));
 	if (t < 0.0f || t > 1.0f) {
 		return false;
 	}
@@ -77,17 +75,36 @@ bool IsCollition(const AABB& aabb, const Sphere& sphere) {
 }
 
 bool IsCollition(const AABB& aabb, const Segment& segment) {
-	float tNearX = std::fmin(aabb.min.x, aabb.max.x);
-	float tFarX = std::fmax(aabb.min.x, aabb.max.x);
-	float tNearY = std::fmin(aabb.min.y, aabb.max.y);
-	float tFarY = std::fmax(aabb.min.y, aabb.max.y);
-	float tNearZ = std::fmin(aabb.min.z, aabb.max.z);
-	float tFarZ = std::fmax(aabb.min.z, aabb.max.z);
+	Vector3 tNear;
+	Vector3 tFar;
+	Vector3 normal[] = {
+		{1, 0, 0},
+		{0, 1, 0},
+		{0, 0, 1 }
+	};
 
-	float tmin = std::fmax(std::fmax(tNearX, tNearY), tNearZ);
-	float tmax = std::fmin(std::fmin(tFarX, tFarY), tFarZ);
+	for (int i = 0; i < 3; ++i) {
+		
+		float tmin = ClosestPoint(segment, normal[i], (&aabb.min.x)[i]);
+		float tmax = ClosestPoint(segment, normal[i], (&aabb.max.x)[i]);
+
+		(&tNear.x)[i] = min(tmin, tmax);
+		(&tFar.x)[i] = max(tmin, tmax);
+	}
+
+	float tmin = max(max(tNear.x, tNear.y), tNear.z);
+	float tmax = min(min(tFar.x, tFar.y), tFar.z);
+
+	ImGui::Begin("AABB");
+	ImGui::Text("tNear: (%f, %f, %f)", tNear.x, tNear.y, tNear.z);
+	ImGui::Text("tFar: (%f, %f, %f)", tFar.x, tFar.y, tFar.z);
+	ImGui::Text("tmin: %f, tmax: %f", tmin, tmax);
+	ImGui::Text("Collision: %s", (tmin <= tmax) ? "Yes" : "No");
+	ImGui::End();
 
 	if (tmin <= tmax) {
 		return true;
 	}
+
+	return false;
 }

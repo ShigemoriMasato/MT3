@@ -98,6 +98,18 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 			translate.z -= kSpeed;
 		}
 
+		if (keys[DIK_K] && !preKeys[DIK_K]) {
+			cameraPosition = { 0.0f, 1.9f, -6.49f };
+			cameraRotate = { 0.26f, 0.0f, 0.0f };
+			CameraScale = { 1.0f, 1.0f, 1.0f };
+		}
+
+		if (keys[DIK_J] && !preKeys[DIK_J]) {
+			cameraPosition = { -6.49f, 1.9f, 0.0f };
+			cameraRotate = { 0.26f, 1.6f, 0.0f };
+			CameraScale = { 1.0f, 1.0f, 1.0f };
+		}
+
 		ImGui::Begin("Camera");
 		ImGui::SliderFloat3("Position", &cameraPosition.x, -10.0f, 10.0f);
 		ImGui::SliderFloat3("Rotate", &cameraRotate.x, -3.14f, 3.14f);
