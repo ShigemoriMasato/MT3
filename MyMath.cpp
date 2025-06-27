@@ -192,6 +192,10 @@ Vector3 MyMath::clamp(const Vector3& value, const Vector3& min, const Vector3& m
 	};
 }
 
+Vector3 MyMath::lerp(const Vector3& a, const Vector3& b, float t) {
+	return a + (b - a) * t;
+}
+
 Matrix4x4 MakeTranslateMatrix(const Vector3& translate) {
 
 	return {

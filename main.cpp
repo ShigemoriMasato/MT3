@@ -124,11 +124,6 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 			color = 0xffffffff;
 		}
 
-		ImGui::Begin("AABB");
-		ImGui::Text("Min: (%.2f, %.2f, %.2f)", worldAABB.min.x, worldAABB.min.y, worldAABB.min.z);
-		ImGui::Text("Max: (%.2f, %.2f, %.2f)", worldAABB.max.x, worldAABB.max.y, worldAABB.max.z);
-		ImGui::End();
-
 		Matrix4x4 worldMatrix = MakeAffineMatrix({ 1.0f, 1.0f,1.0f }, rotate, translate);
 		Matrix4x4 cameraMatrix = MakeAffineMatrix(CameraScale, cameraRotate, cameraPosition);
 		Matrix4x4 viewMatrix = Inverse(cameraMatrix);
@@ -153,8 +148,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 
 		DrawGrid(Multiply(normalWVPMatrix, Multiply(viewMatrix, projectionMatrix)), viewportMatrix);
 
-		DrawAABB(worldAABB, normalWVPMatrix, viewportMatrix, color);
-		DrawSegment(segment, normalWVPMatrix, viewportMatrix, 0x00ff00ff);
+		DrawBezierCurve({-0.8f, -0.58f, 1.0f}, {1.76f, 1.0f, -0.3f}, {0.94f, -0.7f, 2.3f}, Multiply(normalWVPMatrix, Multiply(viewMatrix, projectionMatrix)) * viewportMatrix, 64, 0xff);
 
 		///
 		/// ↑描画処理ここまで

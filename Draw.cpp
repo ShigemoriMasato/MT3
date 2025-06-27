@@ -129,3 +129,22 @@ void DrawAABB(const AABB& a, const Matrix4x4& viewProjectionMatrix, const Matrix
 		Novice::DrawLine(static_cast<int>(vertex[i / 2].x), static_cast<int>(vertex[i / 2].y), static_cast<int>(vertex[(i / 2 + 4) % 8].x), static_cast<int>(vertex[(i / 2 + 4) % 8].y), color);
 	}
 }
+
+void DrawBezierCurve(const Vector3& p0, const Vector3& p1, const Vector3& p2, const Matrix4x4 wvpMatrix, int segments, unsigned int color) {
+	for (int i = 0; i < segments - 1; ++i) {
+		float t = static_cast<float>(i) / static_cast<float>(segments);
+		float next = static_cast<float>(i + 1) / static_cast<float>(segments);
+
+		Vector3 start = lerp(p0, p1, t);
+		Vector3 end = lerp(p1, p2, t);
+		Vector3 bezierPoint = lerp(start, end, t);
+		bezierPoint = bezierPoint * wvpMatrix;
+
+		Vector3 nextStart = lerp(p0, p1, next);
+		Vector3 nextEnd = lerp(p1, p2, next);
+		Vector3 nextBezierPoint = lerp(nextStart, nextEnd, next);
+		nextBezierPoint = nextBezierPoint * wvpMatrix;
+
+		Novice::DrawLine(int(bezierPoint.x), int(bezierPoint.y), int(nextBezierPoint.x), int(nextBezierPoint.y), color);
+	}
+}

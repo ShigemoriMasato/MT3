@@ -95,13 +95,6 @@ bool IsCollition(const AABB& aabb, const Segment& segment) {
 	float tmin = max(max(tNear.x, tNear.y), tNear.z);
 	float tmax = min(min(tFar.x, tFar.y), tFar.z);
 
-	ImGui::Begin("AABB");
-	ImGui::Text("tNear: (%f, %f, %f)", tNear.x, tNear.y, tNear.z);
-	ImGui::Text("tFar: (%f, %f, %f)", tFar.x, tFar.y, tFar.z);
-	ImGui::Text("tmin: %f, tmax: %f", tmin, tmax);
-	ImGui::Text("Collision: %s", (tmin <= tmax) ? "Yes" : "No");
-	ImGui::End();
-
 	if (tmin <= tmax) {
 		return true;
 	}
