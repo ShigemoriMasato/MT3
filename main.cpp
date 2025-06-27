@@ -34,8 +34,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	// ライブラリの初期化
 	Novice::Initialize(kWindowTitle, 1280, 720);
 
-	Vector3 rotate{};
-	Vector3 translate{0.0f, 0.0f, 0.0f};
+	Vector3 cameraPos{0.0f, 0.0f, 0.0f};
 	Vector3 cameraPosition{ 0.0f, 1.9f, -6.49f };
 	Vector3 cameraRotate{ 0.26f, 0.0f, 0.0f };
 	Vector3 CameraScale{ 1.0f, 1.0f, 1.0f };
@@ -44,15 +43,20 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		{ -1.0f, -1.0f, 0.0f },
 		{ 1.0f, -1.0f, 0.0f }
 	};
-	const float kSpeed = 0.1f;
 
-	unsigned int color = 0xffffffff;
+	Vector3 translate[3]{
+		-0.53f, 1.0f, 0.0f,
+		0.87f, -0.62f, 0.0f,
+		0.35f, -0.94f, 0.0f
+	};
 
-	int click = 0;
-	int preClick = 0;
+	Vector3 rotate[3]{
 
-	AABB aabb{ { -1.0f, -1.0f, -1.0f }, { 1.0f, 1.0f, 1.0f } };
-	Segment segment = { -1.0f, -1.0f, -1.0f, 2.0f, 2.0f, 2.0f };
+	};
+
+	Vector3 scale[3]{
+		1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f
+	};
 
 	// キー入力結果を受け取る箱
 	char keys[256] = { 0 };
@@ -67,74 +71,31 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		memcpy(preKeys, keys, 256);
 		Novice::GetHitKeyStateAll(keys);
 
-		// マウスの状態を取得
-		preClick = click;
-		click = Novice::IsPressMouse(0);
-
 		///
 		/// ↓更新処理ここから
 		///
-		if (keys[DIK_W]) {
-			translate.y += kSpeed;
-		}
-
-		if (keys[DIK_S]) {
-			translate.y -= kSpeed;
-		}
-
-		if (keys[DIK_A]) {
-			translate.x -= kSpeed;
-		}
-
-		if (keys[DIK_D]) {
-			translate.x += kSpeed;
-		}
-
-		if (keys[DIK_Q]) {
-			translate.z += kSpeed;
-		}
-
-		if (keys[DIK_E]) {
-			translate.z -= kSpeed;
-		}
-
-		if (keys[DIK_K] && !preKeys[DIK_K]) {
-			cameraPosition = { 0.0f, 1.9f, -6.49f };
-			cameraRotate = { 0.26f, 0.0f, 0.0f };
-			CameraScale = { 1.0f, 1.0f, 1.0f };
-		}
-
-		if (keys[DIK_J] && !preKeys[DIK_J]) {
-			cameraPosition = { -6.49f, 1.9f, 0.0f };
-			cameraRotate = { 0.26f, 1.6f, 0.0f };
-			CameraScale = { 1.0f, 1.0f, 1.0f };
-		}
-
+		
 		ImGui::Begin("Camera");
 		ImGui::SliderFloat3("Position", &cameraPosition.x, -10.0f, 10.0f);
 		ImGui::SliderFloat3("Rotate", &cameraRotate.x, -3.14f, 3.14f);
 		ImGui::SliderFloat3("Scale", &CameraScale.x, 0.01f, 5.0f);
 		ImGui::End();
 
-		AABB worldAABB = { aabb.min + translate, aabb.max + translate };
-
-		if (IsCollition(worldAABB, segment)) {
-			color = 0xff0000ff;
-		} else {
-			color = 0xffffffff;
+		for (int i = 0; i < 3; ++i) {
+			const char* label = (i == 0) ? "Sholder" : (i == 1) ? "Elbow" : "Hand";
+			ImGui::Begin(label);
+			ImGui::DragFloat3("Translate", &translate[i].x, 0.01f);
+			ImGui::DragFloat3("Rotate", &rotate[i].x, 0.01f);
+			ImGui::DragFloat3("Scale", &scale[i].x, 0.01f);
+			ImGui::End();
 		}
 
-		Matrix4x4 worldMatrix = MakeAffineMatrix({ 1.0f, 1.0f,1.0f }, rotate, translate);
+		Matrix4x4 worldMatrix = MakeAffineMatrix({ 1.0f, 1.0f,1.0f }, cameraRotate, cameraPos);
 		Matrix4x4 cameraMatrix = MakeAffineMatrix(CameraScale, cameraRotate, cameraPosition);
 		Matrix4x4 viewMatrix = Inverse(cameraMatrix);
 		Matrix4x4 projectionMatrix = MakePerspectiveFovMatrix(0.45f, float(kWindowWidth) / float(kWindowHeight), 0.1f, 100.0f);
 		Matrix4x4 worldViewProjectionMatrix = Multiply(worldMatrix, Multiply(viewMatrix, projectionMatrix));
 		Matrix4x4 viewportMatrix = MakeViewportMatrix(0, 0, float(kWindowWidth), float(kWindowHeight), 0.0f, 1.0f);
-		Vector3 screenVertices[3];
-		for (uint32_t i = 0; i < 3; i++) {
-			Vector3 ndcVertex = Transform(kLocalVertices[i], worldViewProjectionMatrix);
-			screenVertices[i] = Transform(ndcVertex, viewportMatrix);
-		} 
 
 		///
 		/// ↑更新処理ここまで
@@ -148,7 +109,28 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 
 		DrawGrid(Multiply(normalWVPMatrix, Multiply(viewMatrix, projectionMatrix)), viewportMatrix);
 
-		DrawBezierCurve({-0.8f, -0.58f, 1.0f}, {1.76f, 1.0f, -0.3f}, {0.94f, -0.7f, 2.3f}, Multiply(normalWVPMatrix, Multiply(viewMatrix, projectionMatrix)) * viewportMatrix, 64, 0xff);
+		Matrix4x4 worldMat[3];
+
+		for (int i = 0; i < 3; ++i) {
+			worldMat[i] = MakeIdentity4x4();
+			for (int j = i; j >= 0; --j) {
+				worldMat[i] = worldMat[i] * MakeAffineMatrix(scale[j], rotate[j], translate[j]);
+			}
+			Matrix4x4 wvpMatrix = worldMat[i] * viewMatrix * projectionMatrix;
+			Sphere sphere{};
+			sphere.radius = 0.1f;
+			sphere.subdivision = 16;
+
+			if (i != 0) {
+				Vector3 start{};
+				Vector3 end{};
+				start = start * worldMat[i - 1] * viewMatrix * projectionMatrix * viewportMatrix;
+				end = end * worldMat[i] * viewMatrix * projectionMatrix * viewportMatrix;
+				Novice::DrawLine(int(start.x), int(start.y), int(end.x), int(end.y), 0xffffffff);
+			}
+
+			DrawSphere(sphere, wvpMatrix, viewportMatrix, i == 0 ? 0xff0000ff : i == 1 ? 0x00ff00ff : 0x0000ffff);
+		}
 
 		///
 		/// ↑描画処理ここまで

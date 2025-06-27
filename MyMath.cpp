@@ -196,6 +196,15 @@ Vector3 MyMath::lerp(const Vector3& a, const Vector3& b, float t) {
 	return a + (b - a) * t;
 }
 
+Matrix4x4 MakeIdentity4x4() {
+	return {
+		1.0f, 0.0f, 0.0f, 0.0f,
+		0.0f, 1.0f, 0.0f, 0.0f,
+		0.0f, 0.0f, 1.0f, 0.0f,
+		0.0f, 0.0f, 0.0f, 1.0f
+	};
+}
+
 Matrix4x4 MakeTranslateMatrix(const Vector3& translate) {
 
 	return {
