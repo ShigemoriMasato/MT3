@@ -34,7 +34,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	// ライブラリの初期化
 	Novice::Initialize(kWindowTitle, 1280, 720);
 
-	Vector3 cameraPos{0.0f, 0.0f, 0.0f};
+	Vector3 cameraPos{ 0.0f, 0.0f, 0.0f };
 	Vector3 cameraPosition{ 0.0f, 1.9f, -6.49f };
 	Vector3 cameraRotate{ 0.26f, 0.0f, 0.0f };
 	Vector3 CameraScale{ 1.0f, 1.0f, 1.0f };
@@ -44,19 +44,16 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		{ 1.0f, -1.0f, 0.0f }
 	};
 
-	Vector3 translate[3]{
-		-0.53f, 1.0f, 0.0f,
-		0.87f, -0.62f, 0.0f,
-		0.35f, -0.94f, 0.0f
-	};
-
-	Vector3 rotate[3]{
-
-	};
-
-	Vector3 scale[3]{
-		1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f
-	};
+	Vector3 a = { 0.2f, 1.0f, 0.0f };
+	Vector3 b = { 2.4f, 3.1f, 1.2f };
+	Vector3 c = a + b;
+	Vector3 d = a - b;
+	Vector3 e = a * 2.4f;
+	Vector3 rotate = { 0.4f, 1.43f, -0.8f };
+	Matrix4x4 rotateXMatrix = MakeRotateXMatrix(rotate.x);
+	Matrix4x4 rotateYMatrix = MakeRotateYMatrix(rotate.y);
+	Matrix4x4 rotateZMatrix = MakeRotateZMatrix(rotate.z);
+	Matrix4x4 rotateMatrix = rotateXMatrix * rotateYMatrix * rotateZMatrix;
 
 	// キー入力結果を受け取る箱
 	char keys[256] = { 0 };
@@ -81,14 +78,16 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		ImGui::SliderFloat3("Scale", &CameraScale.x, 0.01f, 5.0f);
 		ImGui::End();
 
-		for (int i = 0; i < 3; ++i) {
-			const char* label = (i == 0) ? "Sholder" : (i == 1) ? "Elbow" : "Hand";
-			ImGui::Begin(label);
-			ImGui::DragFloat3("Translate", &translate[i].x, 0.01f);
-			ImGui::DragFloat3("Rotate", &rotate[i].x, 0.01f);
-			ImGui::DragFloat3("Scale", &scale[i].x, 0.01f);
-			ImGui::End();
-		}
+		ImGui::Begin("Answer");
+		ImGui::Text("c : %f, %f, %f", c.x, c.y, c.z);
+		ImGui::Text("d : %f, %f, %f", d.x, d.y, d.z);
+		ImGui::Text("e : %f, %f, %f", e.x, e.y, e.z);
+		ImGui::Text("rotateMatrix");
+		ImGui::Text("  %f, %f, %f, %f", rotateMatrix.m[0][0], rotateMatrix.m[0][1], rotateMatrix.m[0][2], rotateMatrix.m[0][3]);
+		ImGui::Text("  %f, %f, %f, %f", rotateMatrix.m[1][0], rotateMatrix.m[1][1], rotateMatrix.m[1][2], rotateMatrix.m[1][3]);
+		ImGui::Text("  %f, %f, %f, %f", rotateMatrix.m[2][0], rotateMatrix.m[2][1], rotateMatrix.m[2][2], rotateMatrix.m[2][3]);
+		ImGui::Text("  %f, %f, %f, %f", rotateMatrix.m[3][0], rotateMatrix.m[3][1], rotateMatrix.m[3][2], rotateMatrix.m[3][3]);
+		ImGui::End();
 
 		Matrix4x4 worldMatrix = MakeAffineMatrix({ 1.0f, 1.0f,1.0f }, cameraRotate, cameraPos);
 		Matrix4x4 cameraMatrix = MakeAffineMatrix(CameraScale, cameraRotate, cameraPosition);
@@ -108,29 +107,6 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		Matrix4x4 normalWVPMatrix = Multiply(MakeAffineMatrix({ 1.0f, 1.0f,1.0f }, {}, {}), Multiply(viewMatrix, projectionMatrix));
 
 		DrawGrid(Multiply(normalWVPMatrix, Multiply(viewMatrix, projectionMatrix)), viewportMatrix);
-
-		Matrix4x4 worldMat[3];
-
-		for (int i = 0; i < 3; ++i) {
-			worldMat[i] = MakeIdentity4x4();
-			for (int j = i; j >= 0; --j) {
-				worldMat[i] = worldMat[i] * MakeAffineMatrix(scale[j], rotate[j], translate[j]);
-			}
-			Matrix4x4 wvpMatrix = worldMat[i] * viewMatrix * projectionMatrix;
-			Sphere sphere{};
-			sphere.radius = 0.1f;
-			sphere.subdivision = 16;
-
-			if (i != 0) {
-				Vector3 start{};
-				Vector3 end{};
-				start = start * worldMat[i - 1] * viewMatrix * projectionMatrix * viewportMatrix;
-				end = end * worldMat[i] * viewMatrix * projectionMatrix * viewportMatrix;
-				Novice::DrawLine(int(start.x), int(start.y), int(end.x), int(end.y), 0xffffffff);
-			}
-
-			DrawSphere(sphere, wvpMatrix, viewportMatrix, i == 0 ? 0xff0000ff : i == 1 ? 0x00ff00ff : 0x0000ffff);
-		}
 
 		///
 		/// ↑描画処理ここまで
