@@ -46,10 +46,13 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		{ 1.0f, -1.0f, 0.0f }
 	};
 
+	Pendulum pendulum;
+	pendulum.anchor = { 0.0f, 1.0f, 0.0f };
+	pendulum.angle = 0.7f;
+	pendulum.length = 0.8f;
+
 	CircleMotionBall ball;
 	ball.radius = 0.02f;
-	ball.motionRadius = 0.8f;
-	ball.angularVelocity = std::numbers::pi_v<float>;
 
 	// キー入力結果を受け取る箱
 	char keys[256] = { 0 };
@@ -81,7 +84,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		Matrix4x4 worldViewProjectionMatrix = Multiply(worldMatrix, Multiply(viewMatrix, projectionMatrix));
 		Matrix4x4 viewportMatrix = MakeViewportMatrix(0, 0, float(kWindowWidth), float(kWindowHeight), 0.0f, 1.0f);
 
-		CircleMotion(ball);
+		PendulumMotion(pendulum, &ball);
 
 		///
 		/// ↑更新処理ここまで
@@ -96,6 +99,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		DrawGrid(Multiply(normalWVPMatrix, Multiply(viewMatrix, projectionMatrix)), viewportMatrix);
 
 		DrawBall(&ball, normalWVPMatrix, viewportMatrix, 0xff0000ff);
+		DrawPendulum(pendulum, ball.position, normalWVPMatrix, viewportMatrix, 0x00ff00ff);
 
 		///
 		/// ↑描画処理ここまで

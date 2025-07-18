@@ -149,12 +149,12 @@ void DrawBezierCurve(const Vector3& p0, const Vector3& p1, const Vector3& p2, co
 	}
 }
 
-void DrawSpring(const Spring& spring, const Vector3& end, const Matrix4x4& viewProjectionMatrix, const Matrix4x4& viewportMatrix, uint32_t color) {
+void DrawSpring(const Spring& spring, const Vector3& target, const Matrix4x4& viewProjectionMatrix, const Matrix4x4& viewportMatrix, uint32_t color) {
 	//始点=原点
-	Vector3 scstart = spring.anchor * viewProjectionMatrix * viewportMatrix;
-	Vector3 scend = end * viewProjectionMatrix * viewportMatrix;
+	Vector3 start = spring.anchor * viewProjectionMatrix * viewportMatrix;
+	Vector3 end = target * viewProjectionMatrix * viewportMatrix;
 	
-	Novice::DrawLine(int(scstart.x), int(scstart.y), int(scend.x), int(scend.y), color);
+	Novice::DrawLine(int(start.x), int(start.y), int(end.x), int(end.y), color);
 }
 
 void DrawBall(const Ball* ball, const Matrix4x4& viewProjectionMatrix, const Matrix4x4& viewportMatrix, uint32_t color) {
@@ -165,4 +165,11 @@ void DrawBall(const Ball* ball, const Matrix4x4& viewProjectionMatrix, const Mat
 	sphere.subdivision = 16;
 
 	DrawSphere(sphere, viewProjectionMatrix, viewportMatrix, color);
+}
+
+void DrawPendulum(const Pendulum& pendulum, const Vector3& target, const Matrix4x4& viewProjectionMatrix, const Matrix4x4& viewportMatrix, uint32_t color) {
+	Vector3 start = pendulum.anchor * viewProjectionMatrix * viewportMatrix;
+	Vector3 end = target * viewProjectionMatrix * viewportMatrix;
+
+	Novice::DrawLine(int(start.x), int(start.y), int(end.x), int(end.y), color);
 }
