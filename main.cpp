@@ -3,6 +3,7 @@
 #include <cmath>
 #include <cassert>
 #include <imgui.h>
+#include <numbers>
 #include "MyMath.h"
 #include "Draw.h"
 #include "Collition.h"
@@ -45,17 +46,10 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		{ 1.0f, -1.0f, 0.0f }
 	};
 
-
-	Spring spring;
-	spring.anchor = { 0.0f, 0.0f, 0.0f };
-	spring.naturalLength = 1.0f;
-	spring.stiffness = 100.0f;
-
-	Ball ball;
-	ball.position = { 1.2f, 0.0f, 0.0f };
-	ball.mass = 2.0f;
-	ball.radius = 0.05f;
-
+	CircleMotionBall ball;
+	ball.radius = 0.02f;
+	ball.motionRadius = 0.8f;
+	ball.angularVelocity = std::numbers::pi_v<float>;
 
 	// キー入力結果を受け取る箱
 	char keys[256] = { 0 };
@@ -87,7 +81,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		Matrix4x4 worldViewProjectionMatrix = Multiply(worldMatrix, Multiply(viewMatrix, projectionMatrix));
 		Matrix4x4 viewportMatrix = MakeViewportMatrix(0, 0, float(kWindowWidth), float(kWindowHeight), 0.0f, 1.0f);
 
-		SpringUpdate(spring, ball);
+		CircleMotion(ball);
 
 		///
 		/// ↑更新処理ここまで
@@ -101,8 +95,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 
 		DrawGrid(Multiply(normalWVPMatrix, Multiply(viewMatrix, projectionMatrix)), viewportMatrix);
 
-		DrawSpring(spring, ball.position, normalWVPMatrix, viewportMatrix, 0x00ff00ff);
-		DrawBall(ball, normalWVPMatrix, viewportMatrix, 0xff0000ff);
+		DrawBall(&ball, normalWVPMatrix, viewportMatrix, 0xff0000ff);
 
 		///
 		/// ↑描画処理ここまで

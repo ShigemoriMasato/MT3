@@ -1,4 +1,6 @@
 #pragma once
 #include "MyMath.h"
 
-void SpringUpdate(Spring& spring, Ball& ball);
+void SpringMotion(Spring& spring, DecaltMotionBall& ball);
+
+void CircleMotion(CircleMotionBall& ball);

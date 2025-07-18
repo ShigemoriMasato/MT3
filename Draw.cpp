@@ -157,11 +157,11 @@ void DrawSpring(const Spring& spring, const Vector3& end, const Matrix4x4& viewP
 	Novice::DrawLine(int(scstart.x), int(scstart.y), int(scend.x), int(scend.y), color);
 }
 
-void DrawBall(const Ball& ball, const Matrix4x4& viewProjectionMatrix, const Matrix4x4& viewportMatrix, uint32_t color) {
+void DrawBall(const Ball* ball, const Matrix4x4& viewProjectionMatrix, const Matrix4x4& viewportMatrix, uint32_t color) {
 	//DrawSphereを流用する
 	Sphere sphere;
-	sphere.center = ball.position;
-	sphere.radius = ball.radius;
+	sphere.center = ball->position;
+	sphere.radius = ball->radius;
 	sphere.subdivision = 16;
 
 	DrawSphere(sphere, viewProjectionMatrix, viewportMatrix, color);

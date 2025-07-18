@@ -2,7 +2,7 @@
 #include "imgui.h"
 #include <cmath>
 
-void SpringUpdate(Spring& spring, Ball& ball) {
+void SpringMotion(Spring& spring, DecaltMotionBall& ball) {
 	Vector3 diff = ball.position - spring.anchor;
 	float length = diff.Length();
 
@@ -26,4 +26,10 @@ void SpringUpdate(Spring& spring, Ball& ball) {
 	ImGui::Text("Spring Anchor: (%.2f, %.2f, %.2f)", spring.anchor.x, spring.anchor.y, spring.anchor.z);
 	ImGui::Text("Spring Natural Length: %.2f", spring.naturalLength);
 	ImGui::End();
+}
+
+void CircleMotion(CircleMotionBall& ball) {
+	ball.angle += ball.angularVelocity * ball.deltatime;
+	ball.position.x = ball.motionRadius * std::cos(ball.angle);
+	ball.position.y = ball.motionRadius * std::sin(ball.angle);
 }
