@@ -148,3 +148,21 @@ void DrawBezierCurve(const Vector3& p0, const Vector3& p1, const Vector3& p2, co
 		Novice::DrawLine(int(bezierPoint.x), int(bezierPoint.y), int(nextBezierPoint.x), int(nextBezierPoint.y), color);
 	}
 }
+
+void DrawSpring(const Spring& spring, const Vector3& end, const Matrix4x4& viewProjectionMatrix, const Matrix4x4& viewportMatrix, uint32_t color) {
+	//始点=原点
+	Vector3 scstart = spring.anchor * viewProjectionMatrix * viewportMatrix;
+	Vector3 scend = end * viewProjectionMatrix * viewportMatrix;
+	
+	Novice::DrawLine(int(scstart.x), int(scstart.y), int(scend.x), int(scend.y), color);
+}
+
+void DrawBall(const Ball& ball, const Matrix4x4& viewProjectionMatrix, const Matrix4x4& viewportMatrix, uint32_t color) {
+	//DrawSphereを流用する
+	Sphere sphere;
+	sphere.center = ball.position;
+	sphere.radius = ball.radius;
+	sphere.subdivision = 16;
+
+	DrawSphere(sphere, viewProjectionMatrix, viewportMatrix, color);
+}

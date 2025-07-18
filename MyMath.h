@@ -83,6 +83,22 @@ struct AABB {
 	Vector3 max;
 };
 
+struct Spring {
+	Vector3 anchor{};
+	float naturalLength{};
+	float stiffness{};
+	float dampingCoefficient = 2.0f;
+};
+
+struct Ball {
+	Vector3 position{};
+	Vector3 velocity{};
+	Vector3 acceleration{};
+	float mass{};
+	float radius{};
+	const float deltatime = 1.0f / 60.0f;
+};
+
 Matrix4x4 MakeIdentity4x4();
 
 Matrix4x4 MakeTranslateMatrix(const Vector3& translate);
