@@ -173,3 +173,12 @@ void DrawPendulum(const Pendulum& pendulum, const Vector3& target, const Matrix4
 
 	Novice::DrawLine(int(start.x), int(start.y), int(end.x), int(end.y), color);
 }
+
+void DrawConicalPendulum(const ConicalPendulum& conicalPendulum, const Vector3& target, const Matrix4x4& viewProjectionMatrix, const Matrix4x4& viewportMatrix, uint32_t color) {
+	Matrix4x4 renderingpipeline = viewProjectionMatrix * viewportMatrix;
+
+	Vector3 start = conicalPendulum.anchor * renderingpipeline;
+	Vector3 end = target * renderingpipeline;
+
+	Novice::DrawLine(int(start.x), int(start.y), int(end.x), int(end.y), color);
+}

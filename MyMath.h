@@ -93,7 +93,7 @@ struct Spring {
 struct Ball {
 	Vector3 position{};
 	float radius{};
-	const float deltatime = 1.0f / 60.0f;
+	static inline const float deltatime = 1.0f / 60.0f;
 };
 
 struct Pendulum {
@@ -117,6 +117,14 @@ struct CircleMotionBall : public Ball {
 	float motionRadius{};
 	float mass{};
 };
+
+struct ConicalPendulum {
+	Vector3 anchor = {0.0f, 1.0f, 0.0f};
+	float length = 0.8f;
+	float halfApexAngle = 0.7f; // 半頂角
+	float angle = 0.0f;
+	float angularVelocity = 0.0f;
+};;
 
 Matrix4x4 MakeIdentity4x4();
 
