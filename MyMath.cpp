@@ -196,6 +196,10 @@ Vector3 MyMath::lerp(const Vector3& a, const Vector3& b, float t) {
 	return a + (b - a) * t;
 }
 
+Vector3 MyMath::Reflect(const Vector3& vector, const Vector3& normal) {
+	return vector - dot(vector, normal) * normal * 2.0f;
+}
+
 Matrix4x4 MakeIdentity4x4() {
 	return {
 		1.0f, 0.0f, 0.0f, 0.0f,

@@ -12,3 +12,5 @@ void PendulumMotion(Pendulum& pendulum, Ball* ball);
 
 //円錐振り子
 void ConicalPendulumMotion(ConicalPendulum& conicalPendulum, Ball* ball);
+
+void PlaneReflect(Plane& plane, DecaltMotionBall& ball, float e);

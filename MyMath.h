@@ -70,8 +70,8 @@ struct Segment {
 };
 
 struct Plane {
-	Vector3 normal;
-	float distance;
+	Vector3 normal = { 0.0f, 1.0f, 0.0f };
+	float distance = {};
 };
 
 struct Triangle {
@@ -173,4 +173,6 @@ namespace MyMath {
 	Vector3 clamp(const Vector3& value, const Vector3& min, const Vector3& max);
 
 	Vector3 lerp(const Vector3& a, const Vector3& b, float t);
+
+	Vector3 Reflect(const Vector3& vector, const Vector3& normal);
 }

@@ -46,10 +46,11 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		{ 1.0f, -1.0f, 0.0f }
 	};
 
-	ConicalPendulum conicalPendulum{};
-
-	CircleMotionBall ball;
-	ball.radius = 0.02f;
+	Plane plane{};
+	DecaltMotionBall ball{};
+	ball.position = { 0.0f, 3.0f, 0.0f };
+	ball.acceleration = { 0.0f, -9.8f, 0.0f };
+	ball.radius = 0.1f;
 
 	// キー入力結果を受け取る箱
 	char keys[256] = { 0 };
@@ -81,7 +82,28 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		Matrix4x4 worldViewProjectionMatrix = Multiply(worldMatrix, Multiply(viewMatrix, projectionMatrix));
 		Matrix4x4 viewportMatrix = MakeViewportMatrix(0, 0, float(kWindowWidth), float(kWindowHeight), 0.0f, 1.0f);
 
-		ConicalPendulumMotion(conicalPendulum, &ball);
+		ImGui::Begin("Camera");
+		ImGui::SliderFloat3("Position", &cameraPosition.x, -10.0f, 10.0f);
+		ImGui::SliderFloat3("Rotate", &cameraRotate.x, -3.14f, 3.14f);
+		ImGui::SliderFloat3("Scale", &CameraScale.x, 0.01f, 5.0f);
+		ImGui::End();
+
+		ImGui::Begin("Plane");
+
+		ImGui::DragFloat3("normal", &plane.normal.x, 0.01f);
+		ImGui::DragFloat("distance", &plane.distance, 0.01f);
+
+		ImGui::End();
+
+		ImGui::Begin("Ball");
+		ImGui::Text("Position: (%.2f, %.2f, %.2f)", ball.position.x, ball.position.y, ball.position.z);
+		ImGui::Text("Velocity: (%.2f, %.2f, %.2f)", ball.velocity.x, ball.velocity.y, ball.velocity.z);
+		ImGui::Text("Acceleration: (%.2f, %.2f, %.2f)", ball.acceleration.x, ball.acceleration.y, ball.acceleration.z);
+		ImGui::End();
+
+		plane.normal = plane.normal.Normalize();
+
+		PlaneReflect(plane, ball, 0.8f);
 
 		///
 		/// ↑更新処理ここまで
@@ -95,9 +117,9 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 
 		DrawGrid(Multiply(normalWVPMatrix, Multiply(viewMatrix, projectionMatrix)), viewportMatrix);
 
-		DrawConicalPendulum(conicalPendulum, ball.position, normalWVPMatrix, viewportMatrix, 0x00ff00ff);
+		DrawPlane(plane, Multiply(viewMatrix, projectionMatrix), viewportMatrix, 0x00ff00ff);
 
-		DrawBall(&ball, normalWVPMatrix, viewportMatrix, 0xff0000ff);
+		DrawBall(&ball, MakeTranslateMatrix(ball.position) * viewMatrix * projectionMatrix, viewportMatrix, 0xff0000ff);
 
 		///
 		/// ↑描画処理ここまで
